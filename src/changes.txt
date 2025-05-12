@@ -1,0 +1,57 @@
+web.cpp:82
+
+String dumpInfo( bool web) {
+  const int msgSize = 650;
+  time_t now = time(nullptr);
+  String msg;
+  uint8_t status = getRunTimeStatus();
+  msg.reserve(msgSize);
+  int count1 = String::getCounter();
+  int tracker1 = String::getTracker();
+  PRINT_RAM("Before dumpInfo");
+  if (web)
+    msg = "<pre><b>" + String(aboutStr) + "</b>\n";
+  else
+    msg = String(aboutStr) + "\n";
+  addDump( msg, "Host",   getDeviceID(), web);
+  addDump( msg, "UpTime", String(millis()/1000/3600) + "h" + String((millis()/1000)%3600) + "s", web);
+  addDump( msg, "Time",   ctime(&now), web);
+  addDump( msg, "Profil", Config::read(CONFIG_NAMESPACE, M_NAME) + " " + Config::read(CONFIG_NAMESPACE, M_TIME),web);
+  addDump( msg, "Server", Config::read(SERVER_NAMESPACE, M_NAME) + ":" + Config::read(SERVER_NAMESPACE, M_PORT),web);
+  addDump( msg, "SSID",   (WiFi.status() == WL_CONNECTED) ? WiFi.SSID() : Config::read(WIFI_NAMESPACE, M_SSID),web);
+  if (!web) {
+    addDump( msg, "WiFi",   wifiStatusStr( WiFi.status()),web);
+    addDump( msg, "IP",   WiFi.localIP().toString(),web);
+  }
+  addDump( msg, "GW",     WiFi.gatewayIP().toString(),web);
+  addDump( msg, "RSSI",   String(WiFi.RSSI()) + (web ? "dBm " + String(rssiToPercent(WiFi.RSSI())) + "%" : ""),web);
+  addDump( msg, "Temp",   String(getCPUtemp(), 1) + (web ? "&deg;C" : ""),web);
+  addDump( msg, "MAC",    WiFi.macAddress(),web);
+  addDump( msg, "Heap",   String(ESP.getFreeHeap()),web);
+  addDump( msg, "Status", systemStateStr( getSystemState()),web);
+  addDump( msg, "AcProt", String(actualCommProtocol, BIN)  + " " + strActualProtocolStatus(actualCommProtocol),web);
+  addDump( msg, "RStats", String(status, BIN) + " " + strRunTimeStatus(status),web);
+  addDump( msg, "TZ",     getenv("TZ"),web);
+  addDump( msg, "erWiFi", String(wifiErrorCount),web);
+  addDump( msg, "erTCP",  String(tcpErrorCount),web);
+  addDump( msg, "Stats",  String(runStats.statAcc.measurements),web);
+  addDump( msg, "Reset",  String(esp_reset_reason()),web);
+  addDump( msg, "SwRst",  String(getSoftResetReason()),web);
+  addDump( msg, "tInfo",  String(sendInfoTimer.getClearTimeDurationMs()/1000),web);
+  addDump( msg, "tTX",    String(tcpSendTimer.getClearTimeDurationMs()/1000),web);
+  addDump( msg, "tRXkAl", String(tcpReceiveWatchdogTimer.getClearTimeDurationMs()/1000),web);
+  addDump( msg, "ReqID",  String(commReqID),web);
+  addDump( msg, "FWUpgr", String(Update.isRunning()),web);
+  addDump( msg, "Cache",  String(packetCache.existsAlert()),web);
+  addDump( msg, "Topic",  publishTopic,web);
+  int count2 = String::getCounter();
+  int tracker2 = String::getTracker();
+  PRINT_RAM("After dumpInfo");
+  PRINT( "Strings: "); PRINT( count2 - count1); PRINT( ' '); PRINTLN( tracker2 - tracker1); 
+  if (web)
+    msg += "</pre>";
+  if (msg.length() > (msgSize - 50)) {
+    PRINT( "!! StatusLen: "); PRINTLN( msg.length());  //584
+  }
+  return msg;
+}
